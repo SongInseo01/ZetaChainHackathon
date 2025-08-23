@@ -86,8 +86,13 @@ const fetchAssets = async () => {
 
   const myBalance = await axios.get(`http://127.0.0.1:8876/balance`);
   const heldCoins = myBalance.data;
+
+  heldCoins.SOL = '2929329.111';
+  heldCoins.XRP = '290.238';
+  heldCoins.ADA = '102032.12';
+  heldCoins.BTC = '0.2323211';
   // const balanceData = await myBalance.json()
-  console.log(myBalance.data);
+  console.log(myBalance.data, heldCoins);
 
   try {
     const markets = Object.keys(heldCoins).map(coin => `KRW-${coin}`).join(',');
