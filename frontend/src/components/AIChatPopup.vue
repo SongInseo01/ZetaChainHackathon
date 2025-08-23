@@ -25,6 +25,7 @@
 
 <script setup>
 import { ref, watch, nextTick } from 'vue';
+import axios from 'axios';
 
 const props = defineProps({
   show: Boolean
@@ -36,10 +37,9 @@ const messages = ref([
   { id: 1, text: '안녕하세요! ZetaSwap AI 상담사입니다. 무엇을 도와드릴까요?', sender: 'ai' }
 ]);
 const inputText = ref('');
-const messageHistory = ref([]); // 이전 대화를 저장할 배열
-const historyIndex = ref(-1); // 현재 보고 있는 이전 대화의 인덱스
+const messageHistory = ref([]); 
+const historyIndex = ref(-1); 
 
-// 가상으로 저장할 코인 목록
 const coinList = ['BTC', 'ETH', 'ETC', 'LTC', 'XRP'];
 
 const scrollToBottom = () => {
@@ -60,88 +60,54 @@ const sendMessage = async () => {
   };
   messages.value.push(userMessage);
 
-  // 사용자가 보낸 메시지를 기록에 추가
   messageHistory.value.push(trimmedText);
-  // 인덱스 초기화
   historyIndex.value = -1;
 
-  if (trimmedText.startsWith('분배')) {
-    const parts = trimmedText.split(' ').filter(part => part !== '');
-    const ratios = parts.slice(1).map(Number).filter(n => !isNaN(n) && n >= 0);
-
-    if (ratios.length > 0 && ratios.length <= coinList.length) {
-      const total = ratios.reduce((sum, current) => sum + current, 0);
-      const isTotalTenOrHundred = total === 10 || total === 100;
-
-      const distribution = {};
-      let aiResponseText = '';
-
-      if (isTotalTenOrHundred) {
-        ratios.forEach((ratio, index) => {
-          distribution[coinList[index]] = ratio;
-        });
-        aiResponseText = `네, 분배 비율을 ${JSON.stringify(distribution, null, 2)}로 저장했습니다.`;
-      } else {
-        ratios.forEach((ratio, index) => {
-          const percentage = (ratio / total) * 100;
-          distribution[coinList[index]] = Math.round(percentage);
-        });
-        aiResponseText = `총합이 10 또는 100이 아니므로, 비율을 %로 변환하여 ${JSON.stringify(distribution, null, 2)}로 저장했습니다.`;
+  try {
+    // --- axios POST 요청 ---
+    const response = await axios({
+      method: 'post',
+      url: 'http://127.0.0.1:7777/llm',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      data: {
+        user_input: trimmedText
       }
+    });
 
-      try {
-        localStorage.setItem('distributionRatio', JSON.stringify(distribution));
-        messages.value.push({
-          id: messages.value.length + 1,
-          text: aiResponseText,
-          sender: 'ai'
-        });
-      } catch (e) {
-        messages.value.push({
-          id: messages.value.length + 1,
-          text: '죄송합니다. 분배 비율 저장에 실패했습니다. 다시 시도해 주세요.',
-          sender: 'ai'
-        });
-      }
-    } else {
-      messages.value.push({
-        id: messages.value.length + 1,
-        text: `분배 비율을 숫자로 입력해 주세요. (예: 분배 50 50) ${coinList.length}개 이하로 입력 가능합니다.`,
-        sender: 'ai'
-      });
-    }
-  } else {
-    const aiResponse = {
+    const aiReason = response.data?.reason || '응답을 처리할 수 없습니다.';
+
+    messages.value.push({
       id: messages.value.length + 1,
-      text: 'ZetaChain 관련 문의는 언제든지 말씀해주세요.',
+      text: aiReason,
       sender: 'ai'
-    };
-    setTimeout(() => {
-      messages.value.push(aiResponse);
-      nextTick(scrollToBottom);
-    }, 500);
+    });
+
+    alert("hash : " + response.data?.tx_hash);
+  } catch (error) {
+    messages.value.push({
+      id: messages.value.length + 1,
+      text: '서버와 통신 중 오류가 발생했습니다.',
+      sender: 'ai'
+    });
   }
 
   inputText.value = '';
   nextTick(scrollToBottom);
 };
 
-// 키보드 위 방향 (↑) 키 이벤트 핸들러
 const showPreviousMessage = (event) => {
-  // 인덱스가 0보다 작거나 이미 모든 기록을 확인했으면 종료
   if (messageHistory.value.length === 0 || historyIndex.value === 0) return;
 
-  // 인덱스 감소 (가장 최근 메시지부터 역순으로 탐색)
   if (historyIndex.value === -1) {
     historyIndex.value = messageHistory.value.length - 1;
   } else {
     historyIndex.value--;
   }
 
-  // 이전 메시지를 입력창에 표시
   inputText.value = messageHistory.value[historyIndex.value];
 
-  // 키보드 커서를 입력창 끝으로 이동
   nextTick(() => {
     event.target.selectionStart = event.target.selectionEnd = inputText.value.length;
   });
