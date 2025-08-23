@@ -1,7 +1,7 @@
 <template>
   <div class="main-container">
     <header class="app-header" v-if="currentPage !== 'exchange'">
-      <h1 class="header-title">ZetaSwap</h1>
+      <h1 class="header-title">zoos</h1>
       <p class="header-subtitle">가상화폐를 ZetaChain을 통해 편리하게 교환하세요.<br>여러 코인을 쉽게 변환하여, 자산의 운용 효율성을 높여 드립니다.</p>
     </header>
     <main class="app-content">

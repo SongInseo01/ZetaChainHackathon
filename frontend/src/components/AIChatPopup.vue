@@ -34,7 +34,7 @@ const props = defineProps({
 const emit = defineEmits(['close']);
 
 const messages = ref([
-  { id: 1, text: '안녕하세요! ZetaSwap AI 상담사입니다. 무엇을 도와드릴까요?', sender: 'ai' }
+  { id: 1, text: '안녕하세요! zoos AI 상담사입니다. 무엇을 도와드릴까요?', sender: 'ai' }
 ]);
 const inputText = ref('');
 const messageHistory = ref([]); 

@@ -91,6 +91,7 @@ const fetchAssets = async () => {
   heldCoins.XRP = '290.238';
   heldCoins.ADA = '102032.12';
   heldCoins.BTC = '0.2323211';
+  heldCoins.SUI = '0';
   // const balanceData = await myBalance.json()
   console.log(myBalance.data, heldCoins);
 
