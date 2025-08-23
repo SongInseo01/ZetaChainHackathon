@@ -9,9 +9,13 @@
     <div class="exchange-main-wrapper">
       <div class="coin-list-sidebar">
         <h3 class="sidebar-title">코인 목록</h3>
-        <div class="drop-area coin-list-drop-area" @dragover.prevent @drop="handleDropToCoinList">
+        <div class="drop-area coin-list-drop-area"
+             @dragover.prevent
+             @drop="handleDropToCoinList">
           <div v-for="coin in availableCoins" :key="coin.symbol"
-               class="coin-item coin-width" draggable="true" @dragstart="handleDragStart(coin, $event)">
+               class="coin-item coin-width"
+               draggable="true"
+               @dragstart="handleDragStart(coin, $event)">
             <img :src="coin.icon" :alt="coin.symbol" class="coin-icon" />
             <span>{{ coin.symbol }}</span>
           </div>
@@ -22,9 +26,13 @@
         <div class="top-sections-wrapper exchange-card-wrapper">
           <div class="card-section convert-from">
             <h3 class="section-title">변환 기준</h3>
-            <div class="drop-area standard-drop-area" @dragover.prevent @drop="handleDropToStandard" style="min-width: 150px">
+            <div class="drop-area standard-drop-area"
+                 @dragover.prevent
+                 @drop="handleDropToStandard"
+                 style="min-width: 150px">
               <div v-if="standardCoin" class="coin-item"
-                   draggable="true" @dragstart="handleDragStart(standardCoin, $event)">
+                   draggable="true"
+                   @dragstart="handleDragStart(standardCoin, $event)">
                 <img :src="standardCoin.icon" :alt="standardCoin.symbol" class="coin-icon" />
                 <span>{{ standardCoin.symbol }}</span>
               </div>
@@ -32,9 +40,14 @@
           </div>
           <div class="card-section convert-to">
             <h3 class="section-title">변환하고자 하는 코인</h3>
-            <div class="drop-area targets-drop-area" @dragover.prevent @drop="handleDropToTargets" style="min-width: 150px">
+            <div class="drop-area targets-drop-area"
+                 @dragover.prevent
+                 @drop="handleDropToTargets"
+                 style="min-width: 150px">
               <div v-for="coin in targetCoins" :key="coin.symbol"
-                   class="coin-item" draggable="true" @dragstart="handleDragStart(coin, $event)">
+                   class="coin-item"
+                   draggable="true"
+                   @dragstart="handleDragStart(coin, $event)">
                 <img :src="coin.icon" :alt="coin.symbol" class="coin-icon" />
                 <span>{{ coin.symbol }}</span>
               </div>
@@ -106,7 +119,13 @@ const handleDragStart = (coin, event) => {
 };
 
 const handleDropToCoinList = (event) => {
-  const droppedCoin = JSON.parse(event.dataTransfer.getData('text/plain'));
+  event.preventDefault();
+  const data = event.dataTransfer.getData('text/plain');
+  if (!data) {
+    console.warn("드롭된 데이터가 없습니다");
+    return;
+  }
+  const droppedCoin = JSON.parse(data);
 
   if (standardCoin.value?.symbol === droppedCoin.symbol) {
     standardCoin.value = null;
@@ -121,13 +140,33 @@ const handleDropToCoinList = (event) => {
 };
 
 const handleDropToStandard = (event) => {
-  const droppedCoin = JSON.parse(event.dataTransfer.getData('text/plain'));
-
-  if (standardCoin.value) {
-    handleDropToCoinList({ dataTransfer: { getData: () => JSON.stringify(standardCoin.value) }});
+  event.preventDefault();
+  const data = event.dataTransfer.getData('text/plain');
+  if (!data) {
+    console.warn("드롭된 데이터가 없습니다");
+    return;
   }
 
-  const targetIndex = targetCoins.value.findIndex(c => c.symbol === droppedCoin.symbol);
+  let droppedCoin;
+  try {
+    droppedCoin = JSON.parse(data);
+  } catch (e) {
+    console.error("JSON 파싱 실패:", e);
+    return;
+  }
+
+  if (standardCoin.value) {
+    handleDropToCoinList({
+      dataTransfer: {
+        getData: () => JSON.stringify(standardCoin.value),
+      },
+      preventDefault: () => {}
+    });
+  }
+
+  const targetIndex = targetCoins.value.findIndex(
+    (c) => c.symbol === droppedCoin.symbol
+  );
   if (targetIndex !== -1) {
     targetCoins.value.splice(targetIndex, 1);
   }
@@ -136,7 +175,14 @@ const handleDropToStandard = (event) => {
 };
 
 const handleDropToTargets = (event) => {
-  const droppedCoin = JSON.parse(event.dataTransfer.getData('text/plain'));
+  event.preventDefault();
+  const data = event.dataTransfer.getData('text/plain');
+  if (!data) {
+    console.warn("드롭된 데이터가 없습니다");
+    return;
+  }
+
+  const droppedCoin = JSON.parse(data);
 
   if (targetCoins.value.some(c => c.symbol === droppedCoin.symbol)) {
     return;
@@ -155,6 +201,7 @@ const fetchRatio = () => {
 </script>
 
 <style scoped>
+/* (스타일은 그대로 유지) */
 .exchange-page-container {
   font-family: 'Pretendard', sans-serif;
   background-color: #f6f6f6;
@@ -166,256 +213,36 @@ const fetchRatio = () => {
   padding: 4rem 2rem;
   box-sizing: border-box;
 }
-
-.page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  width: 100%;
-}
-
-.page-title {
-  font-size: 3rem;
-  font-weight: 800;
-  color: #007bff;
-  letter-spacing: -2px;
-}
-
-.page-subtitle {
-  font-size: 1.2rem;
-  color: #666;
-  margin-top: 0.5rem;
-  line-height: 1.5;
-}
-
-.exchange-main-wrapper {
-  width: 100%;
-  max-width: 1200px;
-  display: flex;
-  gap: 2rem;
-}
-
-.coin-list-sidebar {
-  width: 200px;
-  background-color: #fff;
-  border-radius: 20px;
-  padding: 2.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-}
-
-.sidebar-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #555;
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.main-content-area {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.exchange-card-wrapper {
-  background-color: #fff;
-  padding: 2.5rem;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-}
-
-.top-sections-wrapper {
-  display: flex;
-  gap: 2rem;
-}
-
-.card-section {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.section-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-  color: #555;
-}
-
-.drop-area {
-  min-height: 150px;
-  background-color: #f0f0f0;
-  border: 2px dashed #ccc;
-  border-radius: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  gap: 1.5rem;
-}
-
-.targets-drop-area {
-  overflow-x: auto;
-  flex-wrap: nowrap;
-  justify-content: flex-start;
-}
-
-.coin-width {
-  width : 100%;
-}
-
-.coin-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: grab;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
-  gap: 0.5rem;
-  flex-shrink: 0;
-  margin: 0 0.5rem;
-}
-
-.coin-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-}
-
-.conversion-amount-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-}
-
-.amount-input {
-  width: 80%;
-  max-width: 300px;
-  padding: 1rem;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  font-size: 1.2rem;
-  text-align: center;
-}
-
-.conversion-ratio-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-
-.fetch-ratio-button {
-  background-color: #fff2cc;
-  border: 1px solid #ffdb4d;
-  color: #333;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 2rem;
-  transition: background-color 0.2s;
-}
-
-.fetch-ratio-button:hover {
-  background-color: #ffe680;
-}
-
-.ratio-input-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 2rem;
-  width: 100%;
-}
-
-.ratio-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  text-align: center;
-}
-
-.ratio-bar-container {
-  position: relative;
-  width: 80px;
-  height: 120px;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  padding: 5px;
-}
-
-.ratio-coin-icon {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  opacity: 0.8;
-  border-radius: 50%;
-  z-index: 1;
-}
-
-.ratio-bar {
-  width: 70%;
-  background-color: #ff6666;
-  border-radius: 6px;
-  transition: height 0.3s ease-in-out;
-  z-index: 0;
-}
-
-.ratio-input-group {
-  display: flex;
-  align-items: center;
-}
-
-.ratio-input {
-  width: 50px;
-  height: 35px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  text-align: center;
-  font-size: 1rem;
-}
-
-.percentage-symbol {
-  margin-left: 0.5rem;
-  font-size: 1rem;
-  color: #555;
-}
-
-.ratio-coin-symbol {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #333;
-  margin-top: 0.5rem;
-}
-
-.convert-button {
-  margin-top: 20px;
-  width: 150px;
-  padding: 0.9rem;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #fff;
-  background-color: #007bff;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: background-color 0.3s ease-in-out;
-}
-
-.convert-button:hover {
-  background-color: #0056b3;
-}
+.page-header { text-align: center; margin-bottom: 3rem; width: 100%; }
+.page-title { font-size: 3rem; font-weight: 800; color: #007bff; letter-spacing: -2px; }
+.page-subtitle { font-size: 1.2rem; color: #666; margin-top: 0.5rem; line-height: 1.5; }
+.exchange-main-wrapper { width: 100%; max-width: 1200px; display: flex; gap: 2rem; }
+.coin-list-sidebar { width: 200px; background-color: #fff; border-radius: 20px; padding: 2.5rem; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); }
+.sidebar-title { font-size: 1.2rem; font-weight: 600; color: #555; text-align: center; margin-bottom: 1.5rem; }
+.main-content-area { flex: 1; display: flex; flex-direction: column; gap: 2rem; }
+.exchange-card-wrapper { background-color: #fff; padding: 2.5rem; border-radius: 20px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05); }
+.top-sections-wrapper { display: flex; gap: 2rem; }
+.card-section { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.section-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 1.5rem; color: #555; }
+.drop-area { min-height: 150px; background-color: #f0f0f0; border: 2px dashed #ccc; border-radius: 10px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; padding: 1rem; gap: 1.5rem; }
+.targets-drop-area { overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; }
+.coin-width { width: 100%; }
+.coin-item { display: flex; flex-direction: column; align-items: center; cursor: grab; font-size: 0.9rem; font-weight: 600; color: #333; gap: 0.5rem; flex-shrink: 0; margin: 0 0.5rem; }
+.coin-icon { width: 50px; height: 50px; border-radius: 50%; }
+.conversion-amount-container { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+.amount-input { width: 80%; max-width: 300px; padding: 1rem; border: 1px solid #e0e0e0; border-radius: 10px; font-size: 1.2rem; text-align: center; }
+.conversion-ratio-container { display: flex; flex-direction: column; align-items: center; width: 100%; }
+.fetch-ratio-button { background-color: #fff2cc; border: 1px solid #ffdb4d; color: #333; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 500; border-radius: 8px; cursor: pointer; margin-bottom: 2rem; transition: background-color 0.2s; }
+.fetch-ratio-button:hover { background-color: #ffe680; }
+.ratio-input-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 2rem; width: 100%; }
+.ratio-box { display: flex; flex-direction: column; align-items: center; gap: 1rem; text-align: center; }
+.ratio-bar-container { position: relative; width: 80px; height: 120px; background-color: #f0f0f0; border-radius: 8px; display: flex; justify-content: center; align-items: flex-end; padding: 5px; }
+.ratio-coin-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 40px; height: 40px; opacity: 0.8; border-radius: 50%; z-index: 1; }
+.ratio-bar { width: 70%; background-color: #ff6666; border-radius: 6px; transition: height 0.3s ease-in-out; z-index: 0; }
+.ratio-input-group { display: flex; align-items: center; }
+.ratio-input { width: 50px; height: 35px; border: 1px solid #e0e0e0; border-radius: 8px; text-align: center; font-size: 1rem; }
+.percentage-symbol { margin-left: 0.5rem; font-size: 1rem; color: #555; }
+.ratio-coin-symbol { font-size: 0.9rem; font-weight: 600; color: #333; margin-top: 0.5rem; }
+.convert-button { margin-top: 20px; width: 150px; padding: 0.9rem; font-size: 1.5rem; font-weight: 700; color: #fff; background-color: #007bff; border: none; border-radius: 12px; cursor: pointer; transition: background-color 0.3s ease-in-out; }
+.convert-button:hover { background-color: #0056b3; }
 </style>

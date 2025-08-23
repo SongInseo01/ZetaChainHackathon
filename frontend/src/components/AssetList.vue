@@ -63,6 +63,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import axios from 'axios';
 import AIChatPopup from './AIChatPopup.vue';
 
 const props = defineProps({
@@ -79,20 +80,18 @@ const showAIHelp = ref(false);
 const isHovering = ref(false);
 let intervalId = null;
 
-const heldCoins = {
-  'BTC': 0.0543,
-  'ETH': 1.245,
-  'ADA': 150,
-  'XRP': 1000,
-};
-
 const fetchAssets = async () => {
   loading.value = true;
   error.value = false;
 
+  const myBalance = await axios.get(`http://127.0.0.1:8876/balance`);
+  const heldCoins = myBalance.data;
+  // const balanceData = await myBalance.json()
+  console.log(myBalance.data);
+
   try {
     const markets = Object.keys(heldCoins).map(coin => `KRW-${coin}`).join(',');
-    const response = await fetch(`https://api.upbit.com/v1/ticker?markets=${markets}`);
+    const response = await fetch(`https://api.bithumb.com/v1/ticker?markets=${markets}`);
 
     if (!response.ok) {
       throw new Error(`API 응답 오류: ${response.status} ${response.statusText}`);
